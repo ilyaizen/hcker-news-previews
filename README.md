@@ -1,6 +1,8 @@
 # hcker.news previews
 
-A Chrome Extension (Manifest V3) for [hcker.news](https://hcker.news/) that adds polished story previews without getting in the way.
+Chrome/Edge extension showing story image previews and descriptions beside the headlines.
+
+Features:
 
 - 16:9 story thumbnail on each item
 - favicon before the title
@@ -10,14 +12,6 @@ A Chrome Extension (Manifest V3) for [hcker.news](https://hcker.news/) that adds
 - on-site toggle + size control
 
 ![Preview](preview.gif)
-
-## Highlights
-
-- Uses the YAHNC API to map HN item IDs to images
-- Prefers remote `og:image` URLs when available
-- Falls back to a stored screenshot only when needed
-- Dedupe-safe and idempotent for infinite scroll / client navigation
-- Gracefully hides missing or broken images
 
 ## Install
 
@@ -42,6 +36,14 @@ Settings sync via `chrome.storage.sync` and apply live.
 
 - <kbd>I</kbd> — toggle thumbnails
 - <kbd>Esc</kbd> — close the lightbox
+
+## Highlights
+
+- Uses the YAHNC API to map HN item IDs to images
+- Prefers remote `og:image` URLs when available
+- Falls back to a stored screenshot only when needed
+- Dedupe-safe and idempotent for infinite scroll / client navigation
+- Gracefully hides missing or broken images
 
 ## Development
 
