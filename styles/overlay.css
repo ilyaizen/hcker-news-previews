@@ -1,0 +1,431 @@
+/* overlay.css — one 16:9 thumbnail per story (top-left, above the title), a
+   polished hover preview card, a click-to-open lightbox, and an on-site
+   status/toggle control. All classes are yahnc- prefixed to avoid colliding
+   with hcker.news styles. */
+
+/* Master kill-switch: when disabled, hide every injected thumbnail without
+   removing it (re-enable is instant). Controls pill stays visible. */
+.yahnc-disabled .yahnc-thumb-wrap {
+  display: none !important;
+}
+
+/* ----- thumbnail (16:9, block BELOW the description, ~w-lg) ----- */
+.yahnc-thumb-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 512px; /* ~ Tailwind w-lg */
+  margin: 8px 0 20px;
+  z-index: 1;
+}
+
+/* Clips the 10% zoom to the 16:9 box. Separate from .yahnc-thumb-wrap so the
+   absolutely-positioned hover preview is NOT clipped by overflow:hidden. */
+.yahnc-thumb-frame {
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(127, 127, 127, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Stacking root-cause fix: every .yahnc-thumb-wrap is a `position:relative`
+   stacking context at z-index:1, so the preview's z-index only ranks it
+   INSIDE its own wrap. A later sibling story's wrap (also z-index:1, later in
+   DOM order) therefore paints on top of an earlier wrap's preview. Lifting the
+   whole hovered wrap just above its siblings lets the preview escape them —
+   keep this small (not max-int) so it still loses to the page's own header. */
+.yahnc-thumb-wrap:hover {
+  z-index: 2;
+}
+
+.yahnc-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  cursor: zoom-in;
+  transform: scale(1.1); /* 10% zoom, cropped by .yahnc-thumb-frame */
+  transition: transform 0.2s ease;
+}
+
+.yahnc-thumb-frame:hover,
+.yahnc-thumb-wrap.yahnc-title-hovered .yahnc-thumb-frame {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.yahnc-thumb-frame:hover .yahnc-thumb,
+.yahnc-thumb-wrap.yahnc-title-hovered .yahnc-thumb {
+  transform: scale(1.14);
+}
+
+/* ----- large mode: <a> wrapping the thumb opens the story ----- */
+.yahnc-thumb-wrap.yahnc-large {
+  text-decoration: none;
+  cursor: pointer;
+}
+.yahnc-thumb-wrap.yahnc-large .yahnc-thumb {
+  cursor: pointer; /* navigates to the story, not zoom */
+}
+
+/* Title highlight when the (large) image shares the title's hover group.
+   Matches hcker.news link hover style (no underline, just color change). */
+.yahnc-title-hot {
+  color: var(--story-title-hover-color, #ff6600);
+}
+
+/* ----- extra-small mode: fixed left column, text in a right column ----- */
+.yahnc-xs-host {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.yahnc-xs-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.yahnc-thumb-wrap.yahnc-xs {
+  flex: none;
+  width: 80px;
+  max-width: 80px;
+  margin: 2px 0;
+}
+.yahnc-thumb-wrap.yahnc-xs .yahnc-thumb {
+  cursor: zoom-in;
+}
+
+/* ----- inline favicon (before the title) + description (new line) ----- */
+.yahnc-disabled .yahnc-fav-badge,
+.yahnc-disabled .yahnc-desc {
+  display: none !important;
+}
+
+/* Inverse-theme circle around the favicon (mirrors hn-clone story-favicon).
+   Light page -> dark circle; dark page -> light circle.
+   Uses hcker.news CSS variables for theme-aware colors. */
+.yahnc-fav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25em;
+  height: 1.25em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: var(--yahnc-fav-bg, #111);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  vertical-align: middle;
+  flex: none;
+  line-height: 1;
+}
+
+@media (prefers-color-scheme: light) {
+  .yahnc-fav-badge {
+    --yahnc-fav-bg: #111;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .yahnc-fav-badge {
+    --yahnc-fav-bg: #f5f5f5;
+  }
+}
+
+.yahnc-title-favicon {
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 3px;
+  display: block;
+}
+
+.yahnc-desc {
+  margin: 0.35em 0 0.1em;
+  font-family: var(--story-font-family, inherit); /* match hcker.news title font */
+  font-size: var(--font-size-smallest, 13px);
+  line-height: 1.4;
+  color: inherit; /* match the subtext line's (comments/author/date) text color */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ----- hover preview card (no layout shift: absolutely positioned) ----- */
+.yahnc-preview {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 1;
+  width: 360px;
+  max-width: 80vw;
+  padding: 6px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top left;
+  pointer-events: none; /* preview never steals hover */
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.yahnc-preview-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+/* favicon + domain caption under the hover preview image */
+.yahnc-preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 0 2px;
+  font-family: var(--story-meta-font-family, inherit);
+  font-size: var(--font-size-smallest, 12px);
+  line-height: 1.3;
+  color: #555;
+}
+.yahnc-preview-meta:empty {
+  display: none;
+}
+.yahnc-favicon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 3px;
+}
+.yahnc-preview-domain {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yahnc-thumb-wrap:hover .yahnc-preview {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ----- lightbox / modal ----- */
+.yahnc-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.yahnc-modal.yahnc-open {
+  display: flex;
+}
+
+.yahnc-modal-card {
+  max-width: min(92vw, 1000px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Zoom stage: clips/pans the scaled image inside the card. */
+.yahnc-modal-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  max-height: 78vh;
+}
+
+.yahnc-modal-img {
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 8px;
+  transform: scale(var(--yahnc-zoom, 1));
+  transform-origin: center center;
+  transition: transform 0.15s ease;
+}
+
+.yahnc-modal-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--story-meta-font-family, inherit);
+  font-size: var(--font-size-smallest, 13px);
+  line-height: 1.4;
+  color: #333;
+}
+
+.yahnc-modal-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.yahnc-modal-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yahnc-modal-desc {
+  font-size: var(--font-size-smallest, 12px);
+  color: #666;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.yahnc-modal-desc:empty {
+  display: none;
+}
+
+/* minimal zoom controls: out / reset / in */
+.yahnc-modal-zoom {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+.yahnc-zoom-btn {
+  cursor: pointer;
+  border: 0;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  font:
+    16px/1 system-ui,
+    sans-serif;
+  font-weight: 600;
+  color: #fff;
+  background: #ff6600;
+}
+.yahnc-zoom-btn:hover {
+  background: #e65c00;
+}
+
+/* ----- hcker.news settings-panel integration ----- */
+/* Force-wrap the site's category row so our appended section drops to a new
+   row instead of overflowing past the 3 existing columns. */
+.settings-sections-wrapper {
+  flex-wrap: wrap !important;
+}
+
+.yahnc-settings-section {
+  grid-column: 1 / -1; /* full-width row, not a 5th grid column, if parent is grid */
+  flex: 1 1 100% !important; /* full-width row, not a 4th flex column, if parent is flex */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.yahnc-settings-section .settings-section-content {
+  max-width: 640px;
+}
+
+.yahnc-settings-section .yahnc-size-options {
+  gap: 6px;
+}
+
+.yahnc-settings-section .yahnc-size-option {
+  cursor: pointer;
+  padding: 3px 9px !important;
+  color: var(--text-muted-color);
+  border: 1px solid var(--button-border-color) !important;
+  border-radius: 10px !important;
+  background: var(--button-bg-color, transparent) !important;
+}
+
+.yahnc-settings-section .yahnc-size-option:hover,
+.yahnc-settings-section .yahnc-size-option.is-active {
+  color: var(--text-dark-color);
+  border-color: var(--accent-color) !important;
+}
+
+.yahnc-settings-status {
+  color: var(--text-muted-color);
+  white-space: nowrap;
+}
+
+/* ----- old on-site status + toggle control (unused; kept for older pages) ----- */
+.yahnc-controls {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.86);
+  color: #eee;
+  font:
+    12px/1.2 system-ui,
+    sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+}
+
+.yahnc-toggle {
+  cursor: pointer;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: #ff6600;
+}
+
+.yahnc-controls.yahnc-off .yahnc-toggle {
+  background: #555;
+}
+
+/* secondary pill: cycles large <-> XS image position */
+.yahnc-size {
+  cursor: pointer;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: #444;
+}
+.yahnc-size:hover {
+  background: #333;
+}
+
+.yahnc-status {
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .yahnc-preview,
+  .yahnc-modal-card {
+    background: #1a1a1a;
+  }
+  .yahnc-modal-bar {
+    color: #ddd;
+  }
+  .yahnc-preview-meta {
+    color: #bbb;
+  }
+  .yahnc-modal-desc {
+    color: #aaa;
+  }
+}
